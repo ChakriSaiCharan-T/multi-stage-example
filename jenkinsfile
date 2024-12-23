@@ -1,0 +1,46 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Define DockerHub credentials here, replace with your own
+        DOCKER_HUB_CREDENTIALS = 'docker-hub-credentials'
+        DOCKER_REPO = 'saicharan016/multi-stage-example'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the code from the GitHub repository
+                git 'https://github.com/ChakriSaiCharan-T/multi-stage-example.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build the Docker image using multi-stage Dockerfile
+                    docker.build(DOCKER_REPO)
+                }
+            }
+        }
+
+        stage('Login to DockerHub') {
+            steps {
+                script {
+                    // Login to Docker Hub using credentials stored in Jenkins
+                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_HUB_CREDENTIALS) {
+                        // Push the Docker image to Docker Hub
+                        docker.image(DOCKER_REPO).push()
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up the Docker images to free up space after the job completes
+            cleanWs()
+        }
+    }
+}
